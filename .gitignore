@@ -1,0 +1,15 @@
+# PDF source (trop lourd + copyright)
+*.pdf
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Données locales Hermes (hors repo)
+# ~/.hermes/ n'est pas dans ce dossier, pas besoin de l'exclure ici
