@@ -1,169 +1,121 @@
-# Hermes Project
+# Pennybot — Extension Chrome
 
 ## Vision
 
-Construire une suite d'agents IA métier avec une personnalité forte, une mémoire travaillée, un RAG fiable, et des workflows connectés aux outils des entreprises. L'objectif final : passer du freelance sur mesure à des offres packagées.
-
-Voir `hermes.md` pour la vision complète.
+Extension Chrome side panel pour les **experts-comptables** qui utilisent **Penny Lane**.
+Permet de parler à un agent IA contextualisé sur un client précis, d'interroger ses données comptables et de déclencher des actions directement depuis le navigateur, sans quitter la page en cours.
 
 ---
 
 ## Stack technique
 
-- **Hermes Agent** (Nous Research) — le runtime des agents. Installé dans `~/.hermes/`. Lance avec `hermes` en CLI.
-- **Modèle actuel** : gpt-5.4 via abonnement ChatGPT (openai-codex). Zéro coût API pour l'instant.
-- **RAG** : fichiers markdown dans `~/.hermes/rag/` + recherche ripgrep native dans Hermes (pas encore de vector DB).
-- **viewer.py** — interface web locale pour observer les sessions Hermes en direct (port 7842).
-
----
-
-## Fichiers clés Hermes
-
-| Fichier | Rôle |
-|---|---|
-| `~/.hermes/SOUL.md` | Personnalité de base commune à tous les agents |
-| `~/.hermes/config.yaml` | Config Hermes (modèle, mémoire, délégation...) |
-| `~/.hermes/skills/` | 89 skills bundlés + skills métier custom dans `metier/` |
-| `~/.hermes/memories/` | Mémoire persistante apprise au fil des conversations |
-| `~/.hermes/rag/` | Base documentaire pour le RAG (vide — à alimenter) |
-| `~/.hermes/state.db` | Base SQLite des sessions et messages |
+- **Vite + React 19 + TypeScript** — build toolchain
+- **CSS global** — design system Audacieux (dark teal + electric green)
+- **Manifest V3** — compatible Chrome, Edge, Firefox
+- **`npm run dev`** — rebuild auto (watch mode)
+- **`npm run build`** — build prod dans `dist/`
 
 ---
 
 ## Structure du projet
 
 ```
-agents/
-  expert-comptable/
-    SOUL.md          — personnalité de l'agent (lancer avec --soul)
-    skill/
-      SKILL.md       — comportement RAG + citation CGI (installé dans Hermes)
-
-viewer.py            — interface web : sessions + piliers (port 7842)
-hermes.md            — vision produit complète
-example-skill.md     — exemple de skill Hermes pour référence
+pennybot/
+  src/
+    App.tsx                  — état global (screen, client sélectionné, overlays)
+    sidepanel.tsx            — point d'entrée React
+    style.css                — design system complet (Audacieux)
+    components/
+      Header.tsx             — barre du haut, boutons adaptés selon l'écran
+      ClientSelector.tsx     — écran 1 : liste clients, recherche, ajout
+      ChatView.tsx           — écran 2 : messages, composer, suggestions
+      AddClientFlow.tsx      — overlay 3 étapes : clé API → loading → succès
+      SettingsPanel.tsx      — overlay paramètres (clé API globale)
+      BotMark.tsx            — SVG du logo robot réutilisable
+    hooks/
+      useClients.ts          — liste clients, filtrage, ajout
+      useChat.ts             — messages, envoi, mock réponses
+    lib/
+      types.ts               — types TypeScript (Client, Message, Screen)
+      data.ts                — données mock + helpers (avatarClass, greetingByHour)
+      mockResponses.ts       — réponses simulées par mot-clé
+  public/
+    manifest.json            — config Chrome extension (Manifest V3)
+    background.js            — service worker (ouvre le side panel au clic)
+    icons/                   — icônes 16/32/48/128px (logo robot)
+    design-system/           — assets logo (SVG mark, PNG)
+  sidepanel.html             — entry point HTML Vite
+  vite.config.ts
+  tsconfig.json
+  package.json
 ```
 
 ---
 
-## Comment lancer un agent
+## Commandes
 
-**Agent de base (personnalité commune) :**
 ```bash
-hermes
+cd pennybot
+
+npm run dev      # rebuild automatique à chaque sauvegarde (mode watch)
+npm run build    # build prod → dist/
 ```
 
-**Agent expert-comptable :**
-```bash
-# Pas encore supporté nativement avec --soul, à scripter
-# En attendant : copier le SOUL.md de l'agent dans ~/.hermes/SOUL.md
-cp agents/expert-comptable/SOUL.md ~/.hermes/SOUL.md && hermes
-```
-
-**Interface de visualisation :**
-```bash
-python3 viewer.py
-# → http://localhost:7842
-```
-
-**Envoyer un message sans terminal interactif :**
-```bash
-hermes -z "ton message ici"
-```
+**Charger dans Chrome :**
+1. `chrome://extensions` → Mode développeur activé
+2. "Charger l'extension non empaquetée" → sélectionner `pennybot/dist/`
+3. Après chaque `npm run build` : cliquer ↺ dans `chrome://extensions`
 
 ---
 
-## Comment fonctionne Hermes
+## Design system — Audacieux
 
-1. **SOUL.md** est chargé à chaque message — modifiable en live, pas de redémarrage.
-2. **Skills** : Hermes reçoit la liste de tous les skills dans son system prompt. Le LLM décide lequel charger selon la pertinence sémantique du `name` + `description` dans le frontmatter.
-3. **Mémoire** : faits persistants appris entre les sessions (`memory_enabled: true`).
-4. **Délégation** : Hermes peut spawner des sous-agents pour des tâches longues (`delegate_task`).
-5. **RAG natif** : Hermes utilise `search_files` + ripgrep pour chercher dans les fichiers locaux.
-
----
-
-## Agent expert-comptable — état actuel
-
-- [x] SOUL.md rédigé — personnalité rigoureuse, cite le CGI, disclaimer systématique
-- [x] SKILL.md rédigé + installé dans `~/.hermes/skills/metier/expert-comptable/`
-- [x] Dossier RAG créé : `~/.hermes/rag/cgi/`
-- [x] CGI extrait en markdown : ~1800 articles dans `~/.hermes/rag/cgi/` via `scripts/extract_cgi.py`
-- [x] Tests goal v1 + goal v2 passés — autonomie RAG, vulgarisation, ton chaleureux, sources en bas
-- [x] WhatsApp connecté — gateway Hermes + Baileys, autorisé via LID (`~/.hermes/.env`)
-- [ ] Interface client
-- [ ] Tests terrain (vrais utilisateurs)
-
----
-
-## WhatsApp — config
-
-Le gateway lit `~/.hermes/.env`. Variables clés :
-```
-WHATSAPP_ENABLED=true
-WHATSAPP_MODE=self-chat
-WHATSAPP_ALLOWED_USERS=<LID>@lid   # format LID, pas le numéro de téléphone
-```
-
-Pour trouver son LID : lancer `hermes gateway`, envoyer un message, lire le WARNING dans les logs.
-
----
-
-## Extraction CGI
-
-Le PDF du CGI (~15 Mo) n'est pas dans le repo. Pour régénérer le RAG :
-```bash
-# Placer le PDF dans le dossier du projet, puis :
-python3 scripts/extract_cgi.py
-# → 1800 articles dans ~/.hermes/rag/cgi/
-```
-
----
-
-## Prochaines étapes (ordre logique)
-
-1. **Interface client** simple pour livrer l'agent (web ou WhatsApp)
-2. **Tests terrain** sur des cas réels
-3. **Décliner** le même pattern sur d'autres agents métier (SAV, finance-admin, assistant interne)
-
----
-
-## Personas métier prévus
-
-| Agent | Ton | Fonctions clés |
+| Token | Valeur | Usage |
 |---|---|---|
-| **expert-comptable** | Rigoureux, précis, prudent | CGI, TVA, IS, IR, déclarations |
-| **SAV** | Empathique, rassurant, calme | FAQ, CGV, escalade humain |
-| **assistant-logiciel** | Pédagogue, patient, step-by-step | Doc, tickets, onboarding |
-| **finance-admin** | Sobre, structuré, traçable | Relances, factures, synthèses |
-| **assistant-interne** | Efficace, contextuel, informel | Procédures, templates, workflows |
+| `--bg` | `#001f1f` | fond principal |
+| `--green` | `#00f872` | accent principal, CTA |
+| `--green-dim` | `rgba(0,248,114,0.16)` | badges, backgrounds légers |
+| `--border-green` | `rgba(0,248,114,0.45)` | bordures actives, inputs focus |
+| `--text-1` | `#ffffff` | texte principal |
+| `--text-3` | `#8fc8c8` | texte secondaire |
+| `--text-4` | `#59a8a8` | texte muted |
+
+Font : **Manrope** (400/500/600/700/800) via Google Fonts.
+
+Bulles chat :
+- **Bot** → carte blanche avec `box-shadow: 0 0 0 1px rgba(0,248,114,0.35)` (glow vert)
+- **User** → dark glass `rgba(255,255,255,0.08)` avec bordure subtile
 
 ---
 
-## Pattern de création d'un agent
+## État actuel
 
-Pour chaque nouvel agent :
-```
-agents/<nom>/
-  SOUL.md     — personnalité spécifique (hérite de la base commune)
-  skill/
-    SKILL.md  — comportement, RAG, format réponse, limites, exemples
-```
-Puis installer le skill :
-```bash
-cp agents/<nom>/skill/SKILL.md ~/.hermes/skills/metier/<nom>/SKILL.md
-```
+- [x] UI complète — sélecteur client, chat, add client flow, paramètres
+- [x] Architecture React + TypeScript + Vite
+- [x] Design Audacieux (dark teal + electric green)
+- [x] Icône extension = logo robot Pennybot
+- [x] Réponses mock contextuelles (CA, factures, rapprochement, notes de frais)
+- [x] Flow "Ajouter un client" via clé API (3 étapes : input → loading → succès)
+- [ ] Connexion réelle à l'API Penny Lane
+- [ ] Authentification cabinet / multi-utilisateurs
+- [ ] Historique des conversations (persistance)
+- [ ] Déploiement Chrome Web Store
 
 ---
 
-## Chunking RAG (règle importante)
+## Prochaines étapes
 
-Ne pas découper par token count. Découper par structure sémantique :
-- Un article = un chunk
-- Métadonnées obligatoires : `source`, `section`, `article`, `date`, `type`
+1. **API Penny Lane** — brancher `src/lib/pennylane.ts` sur les vrais endpoints (clients, factures, soldes)
+2. **Auth** — clé API par cabinet ou OAuth Penny Lane
+3. **Historique** — persister les conversations dans `chrome.storage.local`
+4. **Tests terrain** — vrais utilisateurs experts-comptables
+5. **Chrome Web Store** — packager et soumettre
 
-Exemple de header de fichier markdown :
-```
-# Article 44 sexies — Exonération des entreprises nouvelles
-Source: CGI | Livre: I | Titre: II | Mise à jour: 2024 | Type: exonération
-```
+---
+
+## Ajouter une fonctionnalité
+
+- Nouveau composant UI → `src/components/`
+- Nouvelle logique métier → `src/hooks/` ou `src/lib/`
+- Appel API Penny Lane → `src/lib/pennylane.ts` (à créer)
+- Ne jamais modifier `public/manifest.json` pour des features UI — c'est uniquement pour les permissions Chrome

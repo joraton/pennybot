@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 56" fill="none" role="img" aria-label="Pennylane">
+  
+  <rect x="0" y="4" width="48" height="48" rx="14" fill="#003d3d"></rect>
+  <path d="M14 18h12.2c5.4 0 9 3.2 9 8.1 0 4.9-3.6 8.1-9 8.1H21V42h-7V18zm7 5.4v5.4h4.6c2 0 3.2-1 3.2-2.7 0-1.7-1.2-2.7-3.2-2.7H21z" fill="#00f872"></path>
+  <circle cx="32" cy="40" r="3" fill="#00f872"></circle>
+  
+  <text x="60" y="38" font-family="Manrope, system-ui, sans-serif" font-weight="800" font-size="28" fill="#003d3d" letter-spacing="-0.02em">Pennylane</text>
+</svg>

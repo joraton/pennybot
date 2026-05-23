@@ -1,0 +1,246 @@
+/* ==========================================================================
+   Pennybot Design System — Colors & Type
+   Built on Pennylane's brand foundations (deep teal + electric green).
+   ========================================================================== */
+
+/* Manrope — loaded via Google Fonts. Includes 400, 500, 600, 700, 800. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ---------- BRAND CORE (from Pennylane) ---------- */
+  --brand-deep:    #003d3d;   /* primary surface / brand ink */
+  --brand-green:   #00f872;   /* electric accent / CTA */
+  --brand-mint:    #dafbf2;   /* soft tint / surface */
+  --brand-white:   #ffffff;
+
+  /* ---------- DEEP TEAL SCALE ---------- */
+  --teal-950: #001f1f;
+  --teal-900: #002b2b;
+  --teal-800: #003d3d;        /* = --brand-deep */
+  --teal-700: #0a5151;
+  --teal-600: #1c6a6a;
+  --teal-500: #2f8585;
+  --teal-400: #59a8a8;
+  --teal-300: #8fc8c8;
+  --teal-200: #c2e3e3;
+  --teal-100: #e0f1f1;
+  --teal-50:  #f2faf9;
+
+  /* ---------- GREEN ACCENT SCALE ---------- */
+  --green-700: #00b855;
+  --green-600: #00d864;
+  --green-500: #00f872;       /* = --brand-green */
+  --green-400: #3afb8d;
+  --green-300: #76fcae;
+  --green-200: #a8fdcc;
+  --green-100: #d2feE0;
+  --green-50:  #ebffee;
+
+  /* ---------- MINT / SOFT SURFACE ---------- */
+  --mint-200:  #b6f5e3;
+  --mint-100:  #dafbf2;       /* = --brand-mint */
+  --mint-50:   #effdf8;
+
+  /* ---------- NEUTRALS (warm cool — slight teal tint) ---------- */
+  --ink-1000:  #061514;       /* near-black, for headings on light */
+  --ink-900:   #0e2222;
+  --ink-700:   #2a3a3a;
+  --ink-500:   #51625f;       /* body secondary */
+  --ink-400:   #738481;
+  --ink-300:   #a4b1ae;
+  --ink-200:   #cbd5d2;
+  --ink-100:   #e5ece9;
+  --ink-50:    #f3f6f4;
+  --paper:     #fbfcfb;
+
+  /* ---------- SEMANTIC ---------- */
+  --success:   #00b855;
+  --success-bg:#e6fbef;
+  --warning:   #f5a524;
+  --warning-bg:#fff4e0;
+  --danger:    #e3493b;
+  --danger-bg: #ffeae7;
+  --info:      #2f7fff;
+  --info-bg:   #e7f0ff;
+
+  /* ---------- FOREGROUNDS / BACKGROUNDS (semantic tokens) ---------- */
+  --fg-1:      var(--ink-1000);
+  --fg-2:      var(--ink-700);
+  --fg-3:      var(--ink-500);
+  --fg-muted:  var(--ink-400);
+  --fg-on-dark:var(--brand-white);
+  --fg-on-accent: var(--brand-deep);
+
+  --bg-page:   var(--paper);
+  --bg-surface:var(--brand-white);
+  --bg-soft:   var(--ink-50);
+  --bg-tint:   var(--mint-100);
+  --bg-deep:   var(--brand-deep);
+  --bg-accent: var(--brand-green);
+
+  --border-1:  var(--ink-100);
+  --border-2:  var(--ink-200);
+  --border-strong: var(--ink-700);
+
+  /* ---------- TYPE ---------- */
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Type scale (modular ~1.18) */
+  --fs-display:  56px;
+  --fs-h1:       40px;
+  --fs-h2:       30px;
+  --fs-h3:       22px;
+  --fs-h4:       18px;
+  --fs-body:     15px;
+  --fs-small:    13px;
+  --fs-micro:    11px;
+
+  --lh-tight:    1.1;
+  --lh-snug:     1.25;
+  --lh-normal:   1.5;
+  --lh-relaxed:  1.65;
+
+  --tracking-tight: -0.02em;
+  --tracking-snug:  -0.01em;
+  --tracking-wide:   0.04em;
+  --tracking-caps:   0.08em;
+
+  /* ---------- SPACING (4px base) ---------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* ---------- RADII ---------- */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* ---------- SHADOWS ---------- */
+  --shadow-xs: 0 1px 2px rgba(0, 61, 61, 0.06);
+  --shadow-sm: 0 2px 6px rgba(0, 61, 61, 0.06), 0 1px 2px rgba(0, 61, 61, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 61, 61, 0.08), 0 2px 6px rgba(0, 61, 61, 0.04);
+  --shadow-lg: 0 18px 48px rgba(0, 61, 61, 0.12), 0 4px 12px rgba(0, 61, 61, 0.06);
+  --shadow-glow: 0 0 0 6px rgba(0, 248, 114, 0.18);
+  --shadow-inset: inset 0 0 0 1px rgba(0, 61, 61, 0.06);
+
+  /* ---------- MOTION ---------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+}
+
+/* ============ BASE TYPOGRAPHY ============ */
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  background: var(--bg-page);
+  font-feature-settings: "ss01", "ss02", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.display, .h-display {
+  font-size: var(--fs-display);
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+  color: var(--fg-1);
+}
+
+h1, .h1 {
+  font-size: var(--fs-h1);
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+}
+
+h2, .h2 {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  letter-spacing: var(--tracking-snug);
+  line-height: var(--lh-snug);
+}
+
+h3, .h3 {
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  letter-spacing: var(--tracking-snug);
+  line-height: var(--lh-snug);
+}
+
+h4, .h4 {
+  font-size: var(--fs-h4);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+}
+
+p, .body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
+  color: var(--fg-2);
+}
+
+.lede {
+  font-size: var(--fs-h4);
+  line-height: var(--lh-normal);
+  color: var(--fg-2);
+  font-weight: 500;
+}
+
+.small {
+  font-size: var(--fs-small);
+  color: var(--fg-3);
+}
+
+.micro, .eyebrow {
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--fg-3);
+}
+
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--bg-soft);
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  color: var(--fg-1);
+}
+
+/* Numeric tabular for financial figures */
+.figure, .tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Pill / chip helper */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  background: var(--mint-100);
+  color: var(--brand-deep);
+}

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pennybot">
+  
+  <circle cx="32" cy="32" r="32" fill="#001f1f"></circle>
+  <circle cx="32" cy="32" r="28.5" fill="none" stroke="#1c3e57" stroke-width="3"></circle>
+  
+  <rect x="31" y="10" width="2" height="6" fill="#00f872"></rect>
+  <circle cx="32" cy="10" r="2.8" fill="#00f872"></circle>
+  
+  <path d="M18 28a14 14 0 0 1 14-14v36H22a4 4 0 0 1-4-4V28z" fill="#00f872"></path>
+  <path d="M46 28a14 14 0 0 0-14-14v36h10a4 4 0 0 0 4-4V28z" fill="#0a5a76"></path>
+  
+  <circle cx="16" cy="34" r="3" fill="#00d864"></circle>
+  <circle cx="48" cy="34" r="3" fill="#0a5a76"></circle>
+  
+  <rect x="22" y="28" width="20" height="12" rx="5" fill="#031a1f"></rect>
+  
+  <rect x="26" y="31" width="3.6" height="6" rx="1.8" fill="#00f872"></rect>
+  <rect x="34.4" y="31" width="3.6" height="6" rx="1.8" fill="#3afb8d"></rect>
+</svg>
