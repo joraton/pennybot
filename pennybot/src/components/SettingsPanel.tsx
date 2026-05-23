@@ -8,32 +8,42 @@ interface Props {
 export function SettingsPanel({ open, onClose }: Props) {
   const [apiKey, setApiKey] = useState('')
   const [apiUrl, setApiUrl] = useState('')
+  const [hermesKey, setHermesKey] = useState('')
   const [status, setStatus] = useState<{ msg: string; ok: boolean } | null>(null)
   const [testing, setTesting] = useState(false)
 
   useEffect(() => {
     if (open && typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.get(['apiKey', 'apiUrl'], data => {
+      chrome.storage.local.get(['apiKey', 'apiUrl', 'hermesKey'], data => {
         if (data?.apiKey) setApiKey(data.apiKey as string)
         if (data?.apiUrl) setApiUrl(data.apiUrl as string)
+        if (data?.hermesKey) setHermesKey(data.hermesKey as string)
       })
     }
   }, [open])
 
   function handleSave() {
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.set({ apiKey, apiUrl })
+      chrome.storage.local.set({ apiKey, apiUrl, hermesKey })
     }
-    setStatus({ msg: 'Clé enregistrée avec succès', ok: true })
+    setStatus({ msg: 'Paramètres enregistrés', ok: true })
   }
 
-  function handleTest() {
+  async function handleTest() {
     setTesting(true)
     setStatus(null)
-    setTimeout(() => {
+    try {
+      const res = await fetch('http://localhost:8642/v1/health')
+      if (res.ok) {
+        setStatus({ msg: 'Hermès gateway actif · localhost:8642', ok: true })
+      } else {
+        setStatus({ msg: `Gateway inaccessible (${res.status})`, ok: false })
+      }
+    } catch {
+      setStatus({ msg: 'Hermès gateway non démarré — lance `hermes gateway`', ok: false })
+    } finally {
       setTesting(false)
-      setStatus({ msg: 'Connexion réussie · Penny Lane API v1', ok: true })
-    }, 1600)
+    }
   }
 
   if (!open) return null
@@ -52,6 +62,24 @@ export function SettingsPanel({ open, onClose }: Props) {
 
         <div className="settings-body">
           <div className="settings-section">
+            <label className="settings-label">Agent Hermès — Clé locale</label>
+            <div className="input-row">
+              <input
+                type="password"
+                className="text-input"
+                placeholder="change-me-local-dev"
+                value={hermesKey}
+                onChange={e => setHermesKey(e.target.value)}
+              />
+              <button className="btn-save" onClick={handleSave}>Enregistrer</button>
+            </div>
+            <p className="settings-hint">
+              Valeur de <code>API_SERVER_KEY</code> dans <code>~/.hermes/.env</code>.
+              Lance <code>hermes gateway</code> avant d'utiliser le chat.
+            </p>
+          </div>
+
+          <div className="settings-section">
             <label className="settings-label">Clé API Penny Lane</label>
             <div className="input-row">
               <input
@@ -67,7 +95,7 @@ export function SettingsPanel({ open, onClose }: Props) {
           </div>
 
           <div className="settings-section">
-            <label className="settings-label">URL de base (optionnel)</label>
+            <label className="settings-label">URL Penny Lane (optionnel)</label>
             <input
               type="text"
               className="text-input"
@@ -92,7 +120,7 @@ export function SettingsPanel({ open, onClose }: Props) {
           )}
 
           <button className="btn-primary-dark full" onClick={handleTest} disabled={testing}>
-            {testing ? 'Test en cours…' : 'Tester la connexion'}
+            {testing ? 'Test en cours…' : 'Tester Hermès gateway'}
           </button>
         </div>
       </div>
