@@ -241,7 +241,7 @@ function MessageBubble({ message, client, onAction }: { message: Message; client
   if (isWelcomeMessage(message.html)) {
     return (
       <div className="message bot">
-        <div className="msg-bot-avatar"><BotMark size={26} /></div>
+        <div className="msg-bot-avatar"><img src="/icons/icon128.png" alt="Pennybot" /></div>
         <div className="msg-bot-bubble">
           <div className="welcome-eyebrow">Dossier ouvert · {client.name}</div>
           <div className="welcome-text">
@@ -276,7 +276,7 @@ function MessageBubble({ message, client, onAction }: { message: Message; client
 
   return (
     <div className="message bot">
-      <div className="msg-bot-avatar"><BotMark size={26} /></div>
+      <div className="msg-bot-avatar"><img src="/icons/icon128.png" alt="Pennybot" /></div>
       <BotBubble html={message.html} />
     </div>
   )
