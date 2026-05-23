@@ -5,13 +5,14 @@ interface Props {
   screen: Screen
   onBack: () => void
   onSettings: () => void
+  onNewChat?: () => void
 }
 
-export function Header({ screen, onBack, onSettings }: Props) {
+export function Header({ screen, onBack, onSettings, onNewChat }: Props) {
   return (
     <header className="header">
       <div className="header-brand">
-        <div className="bot-mark"><BotMark size={30} /></div>
+        <div className="bot-mark"><img src="/icons/icon128.png" alt="Pennybot" style={{ width: 30, height: 30, borderRadius: '50%', display: 'block' }} /></div>
         <span className="brand-name">Pennybot</span>
       </div>
 
@@ -37,9 +38,10 @@ export function Header({ screen, onBack, onSettings }: Props) {
               <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>
             </svg>
           </button>
-          <button className="btn-icon" title="Nouvelle conversation">
+          <button className="btn-icon" title="Nouvelle conversation" onClick={onNewChat}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/>
+              <path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/>
+              <path d="M18.5 2.5a2.1 2.1 0 1 1 3 3L13 14l-4 1 1-4z"/>
             </svg>
           </button>
         </div>

@@ -14,8 +14,8 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showAddClient, setShowAddClient] = useState(false)
 
-  const { recent, others, query, setQuery, addClient } = useClients()
-  const { messages, suggestions, isTyping, send, resetForClient } = useChat(selectedClient)
+  const { recent, others, query, setQuery, addClient, removeClient } = useClients()
+  const { messages, suggestions, isTyping, send, stop, resetForClient } = useChat(selectedClient)
 
   const handleSelectClient = useCallback((client: Client) => {
     setSelectedClient(client)
@@ -33,6 +33,14 @@ export function App() {
     addClient(client)
   }, [addClient])
 
+  const handleRemoveClient = useCallback((siren: string) => {
+    removeClient(siren)
+  }, [removeClient])
+
+  const handleNewChat = useCallback(() => {
+    if (selectedClient) resetForClient(selectedClient)
+  }, [selectedClient, resetForClient])
+
   return (
     <>
       <div className="glow glow-tr" aria-hidden="true" />
@@ -42,6 +50,7 @@ export function App() {
         screen={screen}
         onBack={handleBack}
         onSettings={() => setShowSettings(true)}
+        onNewChat={handleNewChat}
       />
 
       {screen === 'client' ? (
@@ -52,6 +61,7 @@ export function App() {
           onQueryChange={setQuery}
           onSelect={handleSelectClient}
           onAddClient={() => setShowAddClient(true)}
+          onRemove={handleRemoveClient}
         />
       ) : selectedClient ? (
         <ChatView
@@ -60,6 +70,7 @@ export function App() {
           suggestions={suggestions}
           isTyping={isTyping}
           onSend={send}
+          onStop={stop}
           onSuggestionClick={send}
         />
       ) : null}

@@ -6,7 +6,25 @@ import type { ConvMessage } from '../lib/hermes'
 
 function uid() { return Math.random().toString(36).slice(2) }
 
-function escHtml(str: string) {
+const IMG_MARKER = /__IMG__(data:image\/[^_]+)__IMGNAME__([^_]+)__ENDIMG__/g
+
+function buildUserHtml(text: string): string {
+  const parts: string[] = []
+  let last = 0
+  let match: RegExpExecArray | null
+  IMG_MARKER.lastIndex = 0
+  while ((match = IMG_MARKER.exec(text)) !== null) {
+    const before = text.slice(last, match.index).trim()
+    if (before) parts.push(`<span>${escText(before)}</span>`)
+    parts.push(`<img class="msg-img-preview" src="${match[1]}" alt="${escText(match[2])}" />`)
+    last = match.index + match[0].length
+  }
+  const after = text.slice(last).trim()
+  if (after) parts.push(`<span>${escText(after)}</span>`)
+  return parts.join('')
+}
+
+function escText(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -34,47 +52,66 @@ export function useChat(client: Client | null) {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [isTyping, setIsTyping] = useState(false)
   const historyRef = useRef<ConvMessage[]>([])
+  const abortRef = useRef<AbortController | null>(null)
 
   const resetForClient = useCallback((c: Client) => {
+    abortRef.current?.abort()
     setMessages([{ id: uid(), role: 'bot', html: buildWelcomeHtml(c) }])
     setSuggestions([])
+    setIsTyping(false)
     historyRef.current = []
+  }, [])
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort()
   }, [])
 
   const send = useCallback(async (text: string) => {
     if (!text.trim() || isTyping) return
 
-    const userMsg: Message = { id: uid(), role: 'user', html: escHtml(text) }
+    const userMsg: Message = { id: uid(), role: 'user', html: buildUserHtml(text) }
     setMessages(prev => [...prev, userMsg])
     setSuggestions([])
     setIsTyping(true)
 
     historyRef.current = [...historyRef.current, { role: 'user', content: text }]
 
+    const ctrl = new AbortController()
+    abortRef.current = ctrl
+
     try {
       const apiKey = await getHermesKey()
 
       if (apiKey && client) {
-        const responseText = await callHermes(historyRef.current, client, apiKey)
+        const responseText = await callHermes(historyRef.current, client, apiKey, ctrl.signal)
         historyRef.current = [...historyRef.current, { role: 'assistant', content: responseText }]
         setMessages(prev => [...prev, { id: uid(), role: 'bot', html: markdownToHtml(responseText) }])
         setSuggestions([])
       } else {
-        await new Promise(r => setTimeout(r, 1000 + Math.random() * 700))
+        await new Promise((r, reject) => {
+          const t = setTimeout(r, 1000 + Math.random() * 700)
+          ctrl.signal.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('Annulé', 'AbortError')) })
+        })
         const botHtml = getMockResponse(text, client)
         setMessages(prev => [...prev, { id: uid(), role: 'bot', html: botHtml }])
         setSuggestions(getSuggestions(text))
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erreur inconnue'
-      historyRef.current = historyRef.current.slice(0, -1)
-      setMessages(prev => [...prev, { id: uid(), role: 'bot', html: errorHtml(msg) }])
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        historyRef.current = historyRef.current.slice(0, -1)
+        setMessages(prev => [...prev, { id: uid(), role: 'bot', html: '<span style="color:#8fc8c8;font-size:12px">Génération arrêtée.</span>' }])
+      } else {
+        const msg = err instanceof Error ? err.message : 'Erreur inconnue'
+        historyRef.current = historyRef.current.slice(0, -1)
+        setMessages(prev => [...prev, { id: uid(), role: 'bot', html: errorHtml(msg) }])
+      }
     } finally {
       setIsTyping(false)
+      abortRef.current = null
     }
   }, [client, isTyping])
 
-  return { messages, suggestions, isTyping, send, resetForClient }
+  return { messages, suggestions, isTyping, send, stop, resetForClient }
 }
 
 function buildWelcomeHtml(c: Client) {

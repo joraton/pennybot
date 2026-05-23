@@ -17,6 +17,7 @@ export interface Client {
   ca?: string
   invoices?: string
   year?: string
+  pennylaneApiKey?: string
 }
 
 export interface Message {

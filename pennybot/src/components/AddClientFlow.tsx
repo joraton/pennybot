@@ -1,19 +1,41 @@
 import { useState, useRef, useEffect } from 'react'
-import { MOCK_NEW_CLIENT, avatarClass } from '../lib/data'
-import type { Client } from '../lib/types'
+import { fetchFirmCompanies, formatSiren } from '../lib/pennylane'
+import type { PLFirmCompany } from '../lib/pennylane'
+import { avatarClass } from '../lib/data'
+import type { Client, ClientTone, ClientSubTone } from '../lib/types'
 
-type Step = 'input' | 'loading' | 'success'
+type Step = 'input' | 'loading' | 'pick' | 'success'
 
 const LOADING_STEPS = [
   'Vérification de la clé API…',
-  'Récupération des données client…',
-  'Synchronisation du dossier…',
+  'Récupération des dossiers clients…',
+  'Synchronisation du cabinet…',
 ]
+
+const TONES: ClientTone[] = ['green', 'teal', 'mint']
 
 interface Props {
   open: boolean
   onClose: () => void
   onAdd: (client: Client) => void
+}
+
+function companyToClient(company: PLFirmCompany, apiKey: string): Client {
+  const name = company.name
+  const tone = TONES[company.id % TONES.length]
+  return {
+    id: `pl-${company.id}`,
+    name,
+    suffix: '',
+    initial: name[0]?.toUpperCase() ?? '?',
+    tone,
+    siren: formatSiren(company.reg_no ?? ''),
+    sub: 'Connecté via API',
+    subTone: 'ok' as ClientSubTone,
+    recent: true,
+    lastSeen: 'à l\'instant',
+    pennylaneApiKey: apiKey,
+  }
 }
 
 export function AddClientFlow({ open, onClose, onAdd }: Props) {
@@ -22,7 +44,8 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
   const [showKey, setShowKey] = useState(false)
   const [error, setError] = useState('')
   const [loadingText, setLoadingText] = useState(LOADING_STEPS[0])
-  const [preview, setPreview] = useState<Client | null>(null)
+  const [companies, setCompanies] = useState<PLFirmCompany[]>([])
+  const [selected, setSelected] = useState<PLFirmCompany | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -31,13 +54,17 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
       setApiKey('')
       setError('')
       setShowKey(false)
+      setCompanies([])
+      setSelected(null)
       setTimeout(() => inputRef.current?.focus(), 180)
     }
   }, [open])
 
-  function handleConnect() {
-    if (!apiKey.trim()) { setError('Veuillez saisir une clé API.'); return }
-    if (apiKey.trim().length < 8) { setError('Clé trop courte — vérifiez dans Penny Lane.'); return }
+  async function handleConnect() {
+    const key = apiKey.trim()
+    if (!key) { setError('Veuillez saisir une clé API.'); return }
+    if (key.length < 8) { setError('Clé trop courte — vérifiez dans Penny Lane.'); return }
+
     setError('')
     setStep('loading')
 
@@ -46,17 +73,40 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
     const interval = setInterval(() => {
       i++
       if (i < LOADING_STEPS.length) setLoadingText(LOADING_STEPS[i])
-    }, 700)
+    }, 800)
 
-    setTimeout(() => {
+    try {
+      const list = await fetchFirmCompanies(key)
       clearInterval(interval)
-      setPreview({ ...MOCK_NEW_CLIENT, id: 'new-' + Date.now() })
-      setStep('success')
-    }, 2200)
+      if (list.length === 0) {
+        setError('Aucun dossier trouvé pour ce cabinet.')
+        setStep('input')
+        return
+      }
+      if (list.length === 1) {
+        setSelected(list[0])
+        setStep('success')
+      } else {
+        setCompanies(list)
+        setStep('pick')
+      }
+    } catch (err) {
+      clearInterval(interval)
+      setError(err instanceof Error ? err.message : 'Erreur de connexion à Penny Lane.')
+      setStep('input')
+    }
+  }
+
+  function handlePick(company: PLFirmCompany) {
+    setSelected(company)
+    setStep('success')
   }
 
   function handleConfirm() {
-    if (preview) { onAdd(preview); onClose() }
+    if (selected) {
+      onAdd(companyToClient(selected, apiKey.trim()))
+      onClose()
+    }
   }
 
   if (!open) return null
@@ -75,8 +125,8 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="add-title">Connecter un client</h3>
-                  <p className="add-sub">Via l'API Penny Lane</p>
+                  <h3 className="add-title">Connecter un dossier</h3>
+                  <p className="add-sub">Clé API cabinet Penny Lane</p>
                 </div>
               </div>
               <button className="btn-icon" onClick={onClose}>
@@ -94,12 +144,12 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
                   </svg>
                 </div>
                 <p className="add-info-text">
-                  Trouvez votre clé dans <strong>Penny Lane → Paramètres → Intégrations → API</strong>. Chaque client a sa propre clé.
+                  Clé API du <strong>cabinet</strong> dans <strong>Penny Lane → Paramètres → Connectivité → Développeurs</strong>.
                 </p>
               </div>
 
               <div className="add-field">
-                <label className="settings-label">Clé API du client</label>
+                <label className="settings-label">Clé API cabinet</label>
                 <div className={`api-key-input-wrap${error ? ' error' : ''}`}>
                   <svg className="key-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
@@ -108,7 +158,7 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
                     ref={inputRef}
                     type={showKey ? 'text' : 'password'}
                     className="api-key-field"
-                    placeholder="pl_live_xxxxxxxxxxxx…"
+                    placeholder="Token généré dans Penny Lane…"
                     value={apiKey}
                     onChange={e => { setApiKey(e.target.value); setError('') }}
                     onKeyDown={e => e.key === 'Enter' && handleConnect()}
@@ -127,14 +177,14 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
                     )}
                   </button>
                 </div>
-                <p className="add-field-hint">{error}</p>
+                {error && <p className="add-field-error">{error}</p>}
               </div>
 
               <button className="btn-connect" onClick={handleConnect}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M13 5l7 7-7 7"/>
                 </svg>
-                Connecter le client
+                Connecter le cabinet
               </button>
             </div>
           </>
@@ -150,7 +200,49 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
           </div>
         )}
 
-        {step === 'success' && preview && (
+        {step === 'pick' && (
+          <>
+            <div className="add-header">
+              <div className="add-header-left">
+                <div className="add-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#00f872" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="add-title">Choisir un dossier</h3>
+                  <p className="add-sub">{companies.length} dossiers trouvés</p>
+                </div>
+              </div>
+              <button className="btn-icon" onClick={onClose}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="add-body">
+              <div className="pick-list">
+                {companies.map(c => (
+                  <button key={c.id} className="pick-item" onClick={() => handlePick(c)}>
+                    <div className={`client-avatar-sm ${avatarClass(TONES[c.id % TONES.length])}`}>
+                      {c.name[0]?.toUpperCase()}
+                    </div>
+                    <div className="pick-info">
+                      <span className="pick-name">{c.name}</span>
+                      {c.reg_no && <span className="pick-siren">{formatSiren(c.reg_no)}</span>}
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                      <path d="M5 12h14M13 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {step === 'success' && selected && (
           <>
             <div className="add-header">
               <div className="add-header-left">
@@ -160,8 +252,8 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="add-title">Client connecté !</h3>
-                  <p className="add-sub">Données récupérées</p>
+                  <h3 className="add-title">Dossier trouvé !</h3>
+                  <p className="add-sub">Données récupérées depuis Penny Lane</p>
                 </div>
               </div>
               <button className="btn-icon" onClick={onClose}>
@@ -173,27 +265,14 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
 
             <div className="add-body">
               <div className="client-preview">
-                <div className={`preview-avatar ${avatarClass(preview.tone)}`}>{preview.initial}</div>
+                <div className={`preview-avatar ${avatarClass(TONES[selected.id % TONES.length])}`}>
+                  {selected.name[0]?.toUpperCase()}
+                </div>
                 <div className="preview-info">
-                  <div className="preview-name">{preview.name}{preview.suffix ? ` ${preview.suffix}` : ''}</div>
-                  <div className="preview-meta">SIREN {preview.siren} · {preview.sector}</div>
+                  <div className="preview-name">{selected.name}</div>
+                  {selected.reg_no && <div className="preview-meta">SIREN {formatSiren(selected.reg_no)}</div>}
                 </div>
                 <span className="preview-badge">Vérifié</span>
-              </div>
-
-              <div className="preview-stats">
-                <div className="stat-item">
-                  <div className="stat-label">Exercice</div>
-                  <div className="stat-value">{preview.year}</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-label">CA annuel</div>
-                  <div className="stat-value">{preview.ca}</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-label">Factures</div>
-                  <div className="stat-value">{preview.invoices}</div>
-                </div>
               </div>
 
               <button className="btn-connect" onClick={handleConfirm}>

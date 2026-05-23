@@ -1,6 +1,12 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import type { Client } from '../lib/types'
 import { avatarClass, statusDotClass, greetingByHour } from '../lib/data'
+
+interface ContextMenu {
+  client: Client
+  x: number
+  y: number
+}
 
 interface Props {
   recent: Client[]
@@ -9,12 +15,29 @@ interface Props {
   onQueryChange: (q: string) => void
   onSelect: (client: Client) => void
   onAddClient: () => void
+  onRemove: (siren: string) => void
 }
 
-export function ClientSelector({ recent, others, query, onQueryChange, onSelect, onAddClient }: Props) {
+export function ClientSelector({ recent, others, query, onQueryChange, onSelect, onAddClient, onRemove }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
   const total = recent.length + others.length
   const noResults = total === 0 && query.trim() !== ''
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, client: Client) => {
+    e.preventDefault()
+    setContextMenu({ client, x: e.clientX, y: e.clientY })
+  }, [])
+
+  const closeMenu = useCallback(() => setContextMenu(null), [])
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const handler = () => closeMenu()
+    window.addEventListener('click', handler)
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu() })
+    return () => window.removeEventListener('click', handler)
+  }, [contextMenu, closeMenu])
 
   return (
     <div id="screen-client" className="screen">
@@ -54,7 +77,7 @@ export function ClientSelector({ recent, others, query, onQueryChange, onSelect,
                 </div>
                 <div className="client-list">
                   {recent.map((c, i) => (
-                    <ClientRow key={c.id} client={c} isActive={i === 0 && !query} onSelect={onSelect} />
+                    <ClientRow key={c.id} client={c} isActive={i === 0 && !query} onSelect={onSelect} onContextMenu={handleContextMenu} />
                   ))}
                 </div>
               </div>
@@ -68,7 +91,7 @@ export function ClientSelector({ recent, others, query, onQueryChange, onSelect,
                 </div>
                 <div className="client-list">
                   {others.map(c => (
-                    <ClientRowCompact key={c.id} client={c} onSelect={onSelect} />
+                    <ClientRowCompact key={c.id} client={c} onSelect={onSelect} onContextMenu={handleContextMenu} />
                   ))}
                 </div>
               </div>
@@ -88,13 +111,44 @@ export function ClientSelector({ recent, others, query, onQueryChange, onSelect,
         </button>
         <span className="footer-version">v 1.4 · Cabinet Renard</span>
       </footer>
+
+      {contextMenu && (
+        <div
+          className="ctx-menu"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="ctx-client-name">{contextMenu.client.name}</div>
+          <button
+            className="ctx-item ctx-item-danger"
+            onClick={() => {
+              onRemove(contextMenu.client.siren)
+              closeMenu()
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+            Supprimer ce client
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
-function ClientRow({ client, isActive, onSelect }: { client: Client; isActive: boolean; onSelect: (c: Client) => void }) {
+function ClientRow({ client, isActive, onSelect, onContextMenu }: {
+  client: Client
+  isActive: boolean
+  onSelect: (c: Client) => void
+  onContextMenu: (e: React.MouseEvent, c: Client) => void
+}) {
   return (
-    <div className={`client-row${isActive ? ' active' : ''}`} onClick={() => onSelect(client)}>
+    <div
+      className={`client-row${isActive ? ' active' : ''}`}
+      onClick={() => onSelect(client)}
+      onContextMenu={e => onContextMenu(e, client)}
+    >
       <div className={`client-avatar ${avatarClass(client.tone)}`}>{client.initial}</div>
       <div className="client-info">
         <div className="client-row-name">
@@ -120,9 +174,17 @@ function ClientRow({ client, isActive, onSelect }: { client: Client; isActive: b
   )
 }
 
-function ClientRowCompact({ client, onSelect }: { client: Client; onSelect: (c: Client) => void }) {
+function ClientRowCompact({ client, onSelect, onContextMenu }: {
+  client: Client
+  onSelect: (c: Client) => void
+  onContextMenu: (e: React.MouseEvent, c: Client) => void
+}) {
   return (
-    <div className="client-row-compact" onClick={() => onSelect(client)}>
+    <div
+      className="client-row-compact"
+      onClick={() => onSelect(client)}
+      onContextMenu={e => onContextMenu(e, client)}
+    >
       <div className={`client-avatar-sm ${avatarClass(client.tone)}`}>{client.initial}</div>
       <div className="compact-info">
         <span className="compact-name">{client.name}</span>
