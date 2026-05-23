@@ -1,4 +1,5 @@
 const FIRM_BASE = 'https://app.pennylane.com/api/external/firm/v1'
+const V2_BASE = 'https://app.pennylane.com/api/external/v2'
 
 export interface PLFirmCompany {
   id: number
@@ -41,6 +42,56 @@ export async function fetchFirmCompanies(apiKey: string): Promise<PLFirmCompany[
   if (!res.ok) throw new Error(`Erreur Penny Lane (${res.status})`)
   const data: PLFirmCompaniesResponse = await res.json()
   return data.companies ?? []
+}
+
+// Company API (clé client — accès à une seule entreprise)
+// Essaie plusieurs endpoints car la v2 varie selon la version Penny Lane
+export async function fetchCompanyByClientKey(apiKey: string): Promise<PLFirmCompany> {
+  const candidates = [
+    `${V2_BASE}/companies`,
+    `${V2_BASE}/me`,
+    `${V2_BASE}/user`,
+  ]
+
+  for (const url of candidates) {
+    console.log('[Pennybot] fetchCompanyByClientKey trying →', url)
+    const res = await fetch(url, { headers: authHeaders(apiKey) })
+    console.log('[Pennybot] status:', res.status)
+    if (res.status === 404) continue
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Clé API invalide — vérifiez dans Penny Lane.')
+    }
+    if (!res.ok) continue
+    const data = await res.json()
+    console.log('[Pennybot] body:', JSON.stringify(data).slice(0, 300))
+
+    // /companies → array ou { companies: [...] }
+    const arr: unknown[] = Array.isArray(data) ? data
+      : Array.isArray(data.companies) ? data.companies
+      : []
+    if (arr.length > 0) {
+      const c = arr[0] as Record<string, unknown>
+      return {
+        id: Number(c.id),
+        name: String(c.name ?? ''),
+        reg_no: String(c.siren ?? c.reg_no ?? ''),
+        client_code: c.client_code as string | undefined,
+      }
+    }
+
+    // /me ou /user → objet avec company ou company_name
+    const c = (data.company ?? data.user?.company ?? data) as Record<string, unknown>
+    if (c.name || c.company_name) {
+      return {
+        id: Number(c.id ?? 0),
+        name: String(c.name ?? c.company_name ?? ''),
+        reg_no: String(c.siren ?? c.reg_no ?? ''),
+        client_code: c.client_code as string | undefined,
+      }
+    }
+  }
+
+  throw new Error('Impossible de récupérer les données de l\'entreprise — vérifiez la clé API.')
 }
 
 export async function fetchFirmCompany(apiKey: string, companyId: number): Promise<PLFirmCompany> {

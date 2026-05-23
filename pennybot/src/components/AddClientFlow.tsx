@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { fetchFirmCompanies, formatSiren } from '../lib/pennylane'
+import { fetchFirmCompanies, fetchCompanyByClientKey, formatSiren } from '../lib/pennylane'
 import type { PLFirmCompany } from '../lib/pennylane'
 import { avatarClass } from '../lib/data'
 import type { Client, ClientTone, ClientSubTone } from '../lib/types'
@@ -76,20 +76,31 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
     }, 800)
 
     try {
-      const list = await fetchFirmCompanies(key)
-      clearInterval(interval)
-      if (list.length === 0) {
-        setError('Aucun dossier trouvé pour ce cabinet.')
-        setStep('input')
+      // Essai 1 : clé cabinet (Firm API)
+      let list: PLFirmCompany[] | null = null
+      try {
+        list = await fetchFirmCompanies(key)
+      } catch {
+        list = null
+      }
+
+      if (list && list.length > 0) {
+        clearInterval(interval)
+        if (list.length === 1) {
+          setSelected(list[0])
+          setStep('success')
+        } else {
+          setCompanies(list)
+          setStep('pick')
+        }
         return
       }
-      if (list.length === 1) {
-        setSelected(list[0])
-        setStep('success')
-      } else {
-        setCompanies(list)
-        setStep('pick')
-      }
+
+      // Essai 2 : clé client (Company API v2)
+      const company = await fetchCompanyByClientKey(key)
+      clearInterval(interval)
+      setSelected(company)
+      setStep('success')
     } catch (err) {
       clearInterval(interval)
       setError(err instanceof Error ? err.message : 'Erreur de connexion à Penny Lane.')
@@ -144,12 +155,12 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
                   </svg>
                 </div>
                 <p className="add-info-text">
-                  Clé API du <strong>cabinet</strong> dans <strong>Penny Lane → Paramètres → Connectivité → Développeurs</strong>.
+                  Clé API <strong>cabinet ou client</strong> dans <strong>Penny Lane → Paramètres → Connectivité → Développeurs</strong>.
                 </p>
               </div>
 
               <div className="add-field">
-                <label className="settings-label">Clé API cabinet</label>
+                <label className="settings-label">Clé API Penny Lane</label>
                 <div className={`api-key-input-wrap${error ? ' error' : ''}`}>
                   <svg className="key-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
@@ -184,7 +195,7 @@ export function AddClientFlow({ open, onClose, onAdd }: Props) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M13 5l7 7-7 7"/>
                 </svg>
-                Connecter le cabinet
+                Connecter le dossier
               </button>
             </div>
           </>
